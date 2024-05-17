@@ -1,0 +1,75 @@
+version: '3'
+
+services:
+  backend:
+    image: 'docker-spring-boot-postgres:latest'
+    build:
+      context: ./kr_backend
+    container_name: back
+    depends_on:
+      - postgres
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    ports:
+      - "8080:8080"
+
+
+
+  frontend:
+    build:
+      context: ./kr_frontend
+    container_name: front
+    stdin_open: true
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - backend
+
+  postgres:
+    container_name: postgresKR
+    image: 'postgres:14'
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+
+    restart: unless-stopped
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "andreylo@yandex.ru"
+      PGADMIN_DEFAULT_PASSWORD: "postgres"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+volumes:
+  postgres-data:
